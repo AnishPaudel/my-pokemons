@@ -1,0 +1,44 @@
+body{
+	overflow: hidden;
+}
+::-webkit-scrollbar-track
+{
+	
+
+	background-color: #ffffff;
+}
+
+::-webkit-scrollbar
+{
+	width: 10px;
+	background-color: #dfe6e9;
+}
+
+::-webkit-scrollbar-thumb
+{
+	background-color: #6a7685;
+	border-radius: 4px;
+	border: 1px solid white
+}
+
+@media only screen and (max-device-width: 480px) {
+	::-webkit-scrollbar-track
+	{
+		
+	
+		background-color: auto;
+	}
+	
+
+	::-webkit-scrollbar {
+		width: auto;
+     	background-color:auto;
+	}
+	
+	::-webkit-scrollbar-thumb
+	{
+		background-color: auto;
+	border-radius: auto;
+	border: auto
+	}
+}
