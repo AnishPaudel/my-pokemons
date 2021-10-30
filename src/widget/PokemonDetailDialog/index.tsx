@@ -1,13 +1,14 @@
-import { Badge, Box, Button, Checkbox, CircularProgress, Flex, GridItem, HStack, Image, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, SimpleGrid, Tab, TabList, TabPanel, TabPanels, Tabs, Tag, Text, useBreakpointValue, VStack } from '@chakra-ui/react';
-import React from "react";
+import { Badge, Box, Button, Checkbox, CircularProgress, Flex, GridItem, HStack, IconButton, Image, Input, InputGroup, InputRightElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverFooter, PopoverHeader, PopoverTrigger, SimpleGrid, Tab, TabList, TabPanel, TabPanels, Tabs, Tag, Text, Tooltip, useBreakpointValue, VStack } from '@chakra-ui/react';
+import React, { useState } from "react";
 import { connect, ConnectedProps } from "react-redux";
 import { bindActionCreators } from "redux";
 import { Pokemon, PokemonDetail, PokemonTypes } from '../../backend/core/pokemon/pokemon.model';
 import { AuthState } from "../../backend/reduxRepo/auth/auth.state";
-import { addRemovePokemon } from "../../backend/reduxRepo/auth/auth.action";
+import { addRemovePokemon, givePokemonNickName } from "../../backend/reduxRepo/auth/auth.action";
 import { fetchPokemonDetail, openCloseDetailDialog } from "../../backend/reduxRepo/pokemon/pokemon.action";
 import { PokemonState } from "../../backend/reduxRepo/pokemon/pokemon.state";
 import { getPokemonTypeColor } from '../../backend/core/common/pokemonTypeUtil';
+import { MdEdit, MdSync } from 'react-icons/md';
 
 const mapStateToProps = (state: any) => {
 
@@ -21,7 +22,7 @@ const mapStateToProps = (state: any) => {
 
 const mapDispatchToProps = (dispatch: any) => {
     return bindActionCreators({
-        fetchPokemonDetail, openCloseDetailDialog, addRemovePokemon
+        fetchPokemonDetail, openCloseDetailDialog, addRemovePokemon, givePokemonNickName
     }, dispatch);
 }
 
@@ -50,9 +51,11 @@ const mergePokemonWithTeam = (team: Pokemon[], pokemon?: Pokemon,): Pokemon | un
         if (pt !== -1) {
             // it is on the team
             p.onTeam = true;
+            p.nickName = team[pt].nickName;
 
         } else {
             p.onTeam = false;
+            p.nickName = undefined;
         }
         return p
 
@@ -65,7 +68,14 @@ const mergePokemonWithTeam = (team: Pokemon[], pokemon?: Pokemon,): Pokemon | un
 const PokemonDetailDialog: React.FC<Props> = (props) => {
     const finalRef = React.useRef<any>();
 
+
     const pokemon = React.useMemo(() => mergePokemonWithTeam(props.authState.auth.team, props.pokemonState.pokemon), [props.pokemonState.pokemon, props.authState.auth.team])
+
+    const [nickNameInput, setNickNameInput] = useState<string>('');
+
+    const [nickNameOpen, setNickNameOpen] = React.useState(false)
+    const openNickNamePopover = () => setNickNameOpen(!nickNameOpen)
+    const closeNickNamePopover = () => setNickNameOpen(false)
 
     const isMobile = useBreakpointValue({ base: true, md: false })
     const dialogCloseHandler = () => {
@@ -202,6 +212,83 @@ const PokemonDetailDialog: React.FC<Props> = (props) => {
         )
     }
 
+    //  nick name 
+
+    const handleNickNameConfirm = () => {
+        if (pokemon) {
+            props.givePokemonNickName(nickNameInput, pokemon, props.authState.auth);
+
+        }
+        closeNickNamePopover();
+        setNickNameInput('')
+
+    }
+
+    const nicNameComponent = (
+        <Popover
+            isOpen={nickNameOpen}
+            onClose={closeNickNamePopover}
+        >
+
+            <PopoverTrigger>
+                <IconButton
+                    aria-label={''}
+                    icon={<MdEdit />}
+                    size={'sm'}
+                    onClick={openNickNamePopover}
+
+                />
+            </PopoverTrigger>
+
+            <PopoverContent>
+                <PopoverArrow />
+                <PopoverCloseButton />
+                <PopoverHeader fontSize={'md'}>{`Give ${pokemon?.nickName ?? pokemon?.name} ${(pokemon?.nickName) ? ' another ' : 'a'} nickname ?`}</PopoverHeader>
+                <PopoverBody mt={3} fontSize={'sm'}>
+                    <InputGroup>
+                        
+                    <Input
+                        value={nickNameInput}
+                        onChange={(e) => setNickNameInput(e.target.value ?? '')}
+                        placeholder={`Enter nickname for ${pokemon?.name}`}
+                        maxLength={30}                 >
+                    </Input>
+                        <InputRightElement children={
+
+                            <IconButton
+                              aria-label={'reset nickname'}
+                              icon={<MdSync/>}
+                              onClick={()=>setNickNameInput(pokemon?.name ?? '')}
+                            />
+                        } />
+                    </InputGroup>
+                    
+
+
+
+                </PopoverBody>
+                <PopoverFooter
+                    border="0"
+                    d="flex"
+                    alignItems="center"
+                    justifyContent="flex-end"
+                    pb={4}
+                >
+
+
+                    <Button
+                        size={'sm'}
+                        colorScheme="primary"
+                        disabled={nickNameInput.length < 2}
+                        onClick={handleNickNameConfirm}
+                    >
+                        Confirm
+                    </Button>
+                </PopoverFooter>
+            </PopoverContent>
+        </Popover>
+    )
+
     const handleonCheckedChange = () => {
         if (pokemon) {
             props.addRemovePokemon(pokemon, props.authState.auth)
@@ -209,11 +296,14 @@ const PokemonDetailDialog: React.FC<Props> = (props) => {
 
     }
 
+
+
+
     return (
         <>
 
 
-            <Modal finalFocusRef={finalRef} size={isMobile?'full':undefined} isOpen={!!(pokemon)} onClose={dialogCloseHandler}>
+            <Modal finalFocusRef={finalRef} size={isMobile ? 'full' : undefined} isOpen={!!(pokemon)} onClose={dialogCloseHandler}>
                 <ModalOverlay />
                 <ModalContent>
 
@@ -230,19 +320,32 @@ const PokemonDetailDialog: React.FC<Props> = (props) => {
                     <ModalHeader>
                         <VStack justifyContent={'center'} alignItems={'center'} spacing={1}>
                             <HStack justifyContent={'center'} w={'100%'}>
+
                                 <Checkbox
+                                    mt={1}
                                     colorScheme="primary"
                                     isChecked={pokemon?.onTeam ?? false}
                                     onChange={handleonCheckedChange}
                                 >
 
                                 </Checkbox>
+
+                                {/* <Input w={'20ch'} placeholder={'ddd'} size={'sm'}>
+                                
+                                </Input> */}
                                 <Text>
-                                    {pokemon?.name}
+                                    {pokemon?.nickName ?? pokemon?.name}
                                 </Text>
+
+                                {/*  nick name  */}
+                                {pokemon?.onTeam ?
+                                    (nicNameComponent) : null
+                                }
+
 
 
                             </HStack>
+
                             {
                                 pokemon?.detail ? types(pokemon?.detail) : null
                             }
@@ -264,7 +367,7 @@ const PokemonDetailDialog: React.FC<Props> = (props) => {
                                         <Tab>Held Items</Tab>
                                     </TabList>
 
-                                    <TabPanels h={isMobile?undefined:'40vh'} overflow={'auto'} >
+                                    <TabPanels h={isMobile ? undefined : '40vh'} overflow={'auto'} >
                                         <TabPanel mt={2} p={2} >
                                             {
                                                 about(pokemon.name, pokemon?.detail)

@@ -47,14 +47,15 @@ const mergeListWithTeam = (team: Pokemon[], list: Pokemon[]): Pokemon[] => {
     }
 
     //reset all 
-    list.forEach(p => { p.onTeam = undefined })
+    list.forEach(p => { p.onTeam = undefined ; p.nickName=undefined})
 
     for (let t of team) {
         let i = list.findIndex((p) => p.name === t.name)
         if (i !== -1) {
             list[i] = {
                 ...list[i],
-                onTeam: true
+                onTeam: true,
+                nickName:t.nickName
             }
         }
 
@@ -210,7 +211,7 @@ const HomePage: React.FC<Props> = (props) => {
     const progressError = (
         <>
             {props.pokemonListS.progress ?
-                <Box display={'flex'} mt={20} justifyContent={'center'} alignItems={'center'}>
+                <Box display={'flex'} w={'95vw'} mt={20} justifyContent={'center'} alignItems={'center'}>
                     <CircularProgress isIndeterminate color={'primary.500'} />
                 </Box>
                 : props.pokemonListS.error ?

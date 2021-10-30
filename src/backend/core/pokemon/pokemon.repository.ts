@@ -25,7 +25,10 @@ export default class PokemonRepository {
             pokemonList = this.cacheProvider.getAllStoredPokemons();
         }
 
-        if (pokemonList.length === 0) {
+        console.log(pokemonList)
+
+        // reason may be cached  when user views their pokemon
+        if (pokemonList.length < 7) {
             //get count first
             const countRes = await this.apiProvider.providePokemonList(0, 1);
 
@@ -76,7 +79,7 @@ export default class PokemonRepository {
             pokemonList = this.cacheProvider.getAllStoredPokemons();
         }
 
-        if (pokemonList.length === 0) {
+        if (pokemonList.length < 7) {
             //get count first
             const countRes = await this.apiProvider.providePokemonList(0, 1);
 
